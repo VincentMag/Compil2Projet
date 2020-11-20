@@ -1,0 +1,196 @@
+// Specification JCup
+import java_cup.runtime.*;
+import java.util.*;
+import java.io.*;
+ 
+parser code {:
+
+	public static void main(String args[]) throws Exception {
+		new parser(new Yylex(new InputStreamReader(System.in))).parse();
+	}
+
+	public void syntax_error(Symbol cur_token) { 
+		// n'interrompt pas la compil... 
+		// on est par defaut dans l'etat error qui permet ensuite la recup
+		// par défaut : report_error("syntax error", null);
+		report_error("Syntaxe incorrecte <"+tokenToString(cur_token)+">", null);        
+	}
+
+	public void report_error(String message, Object info) {   
+		// n'interrompt pas la compil
+		if (info == null) System.err.println("Mon erreur <"+ ptext()+ "> ligne "+ pline() + ", colonne " + pcolumn() + " : " + message);
+		else System.err.println("Mon erreur <"+ptext()+ "> ligne "+ pline() + ", colonne " + pcolumn() + " : " +message+" : "+info);
+		System.err.println("-> mais on continue l'analyse... ");
+	}
+/* utiliser soit la précédante soit celle-ci si on veut ou pas continuer l'analyse une fois une erreur trouvée
+	public void unrecovered_syntax_error(Symbol cur_token) {
+    	// par defaut : report_fatal_error("Couldn't repair and continue parse", null);
+		// on n'a pas reussi a faire de la recup
+		report_fatal_error("Recuperation impossible <"+tokenToString(cur_token)+">", null);   // interrompt la compil     
+	}
+
+	public void report_fatal_error(String message, Object info) {  
+		// qd cette fct est appelee, message vaut par defaut "Couldn't repair and continue parse"
+		String m = "Mon erreur fatale <"+ ptext()+ "> ligne " + pline() + ", colonne " + pcolumn() + " : " + message;
+		if (info == null) System.err.println(m);
+		else System.err.println(m+" : "+info);
+		System.err.println("-> arrêt de l'analyse...");
+		done_parsing(); // interrompt la compil
+  	}*/
+
+	public int pline(){
+		return ((Yylex)getScanner()).getYyLine();
+	}
+	public int pcolumn(){
+		return ((Yylex)getScanner()).getYyColumn();
+	}
+	public String ptext(){
+		return ((Yylex)getScanner()).getYyText();
+	}
+
+
+public String tokenToString (Symbol token) {
+// qqs exemples pour voir...
+     switch (token.sym) {
+//	case sym.SI : return "SI"; 
+//	case sym.CHAINE : return "CHAINE "+token.value;  
+	case sym.ENTIER : return "ENTIER "+token.value;  
+	case sym.IDENT : return "58 "+token.value;
+	case sym.ARGVIDE : return "59 "+token.value;
+	case sym.POINT : return "60"+token.value;
+	case sym.VIRG : return "61 "+token.value;
+	case sym.EGAL : return " 62 "+token.value;
+	case sym.DOUBLEGAL : return " 63 "+token.value;
+	case sym.DEUXPOINTS : return "64 "+token.value;
+	case sym.PTVIRGULE : return "65 "+token.value;
+	case sym.PAROUVRE : return "66 "+token.value;
+	case sym.PARFERME : return "67 "+token.value;
+	case sym.ACCOUVRE : return "68 "+token.value;
+	case sym.ACCFERME : return "69 "+token.value;
+	case sym.APDECLA : return "71 "+token.value;
+	case sym.APDECLAENSEMBLE : return "77 "+token.value;  
+	case sym.INDECLAINTERRUPTEUR : return "78 "+token.value;  
+	case sym.INDECLAMOBILE : return "79 "+token.value;  
+	case sym.INDECLATELEPHONE : return "80 "+token.value;  
+	case sym.INDECLATABLETTE : return "81 "+token.value;  
+	case sym.INDECLATELECOMMANDE : return "82 "+token.value;  
+	case sym.FORALL : return "83 "+token.value;  
+	case sym.DO : return "84 "+token.value;  
+	case sym.DONE : return "85 "+token.value;  
+	case sym.IF : return "86 "+token.value;  
+	case sym.THEN : return "87 "+token.value;  
+	case sym.ELSE : return "88 "+token.value;  
+	case sym.ENDIF : return "89 "+token.value;  
+	case sym.PRINT : return "90 "+token.value;  
+	case sym.EXESCENARIO : return "91 "+token.value;  
+	case sym.COMASSOC : return "92 "+token.value;  
+	case sym.COMPROG : return "93 "+token.value;  
+	case sym.BALISEOUVRANTE : return "94 "+token.value;  
+	case sym.COMMENT : return "95 "+token.value;  
+	case sym.BALISEFERMANTE : return "96 "+token.value;   
+	case sym.FINBALISE : return "97 "+token.value;    
+	case sym.BALISEINIT : return "98 "+token.value;    
+	case sym.BALISEINTERFACE : return "99 "+token.value;    
+	case sym.BALISEAPPAREIL : return "100 "+token.value;    
+	case sym.BALISESCENARII : return "101 "+token.value;    
+	case sym.BALISESCENARIO : return "102 "+token.value;      
+	case sym.TEXT : return "103 "+token.value;      
+	case sym.BALISECOMMANDE : return "104 "+token.value;
+	//  ... A compléter !!
+	default : return "Token imprévu ou error";
+	}
+}
+
+:}
+
+
+
+action code {:
+
+void exemple_de_fonction(String i1, String i2)
+{
+	String m = "Erreur syntaxique <"+i2+"> au lieu de <"+i1+">";
+	if (!(i1.equals(i2))) parser.report_error(m,null);	 
+}
+
+:}
+
+terminal ENTIER, ACTIONS, IDENT, ARGVIDE, POINT, VIRG, EGAL, DOUBLEGAL, DEUXPOINTS, PTVIRGULE, PAROUVRE, PARFERME, ACCOUVRE, ACCFERME, APDECLA, APDECLAENSEMBLE, INDECLAINTERRUPTEUR, INDECLAMOBILE, INDECLATELEPHONE, INDECLATABLETTE, INDECLATELECOMMANDE, FORALL, DO, DONE, IF, ETAT, CHECKETAT, THEN, ELSE, ENDIF, PRINT, EXESCENARIO, COMASSOC, COMPROG, BALISEOUVRANTE, COMMENT, BALISEFERMANTE, FINBALISE, BALISEINIT, BALISEINTERFACE, BALISEAPPAREIL, BALISESCENARII, BALISESCENARIO, TEXT, BALISECOMMANDE ;
+
+non terminal prog, liste, listeVariables,  content1, content2, content3, content4, zoneAppareils, zoneInterfaces, zoneScenarii, zoneCommande, actionsScenario, parametresCOMPROG, listeIdent, param, lastparam, message ;
+/* 
+prog	::= lcomment PROG ....   FINPROG {: System.out.println("FINPROG "+parser.pline()+","+parser.pcolumn()); :} ;
+
+
+dec	::= VAR PT {: System.out.println("décla ok"+ " ligne "+ parser.pline()); :}
+	| error {: System.out.println("Récupération erreur syntaxique au niveau de la déclaration - déclaration non traitée"); :};
+*/
+prog ::= COMMENT prog | liste | ;
+
+liste ::= BALISEOUVRANTE BALISEINIT FINBALISE content1 content2 content3 content4 BALISEFERMANTE BALISEINIT FINBALISE ;
+
+content1 ::= BALISEOUVRANTE BALISEAPPAREIL FINBALISE zoneAppareils BALISEFERMANTE BALISEAPPAREIL FINBALISE 
+		| COMMENT content1;
+
+content2 ::= BALISEOUVRANTE BALISEINTERFACE FINBALISE zoneInterfaces BALISEFERMANTE BALISEINTERFACE FINBALISE 
+		| COMMENT content2;
+
+content3 ::= BALISEOUVRANTE BALISESCENARII FINBALISE zoneScenarii BALISEFERMANTE BALISESCENARII FINBALISE 
+		| COMMENT content3;
+content4 ::= BALISEOUVRANTE BALISECOMMANDE FINBALISE zoneCommande BALISEFERMANTE BALISECOMMANDE FINBALISE 
+		| COMMENT content4;
+
+zoneAppareils ::= APDECLA listeVariables POINT zoneAppareils
+        | APDECLAENSEMBLE IDENT EGAL ACCOUVRE listeVariables ACCFERME POINT zoneAppareils
+        | COMMENT zoneAppareils
+        | ;
+
+zoneInterfaces ::= INDECLAINTERRUPTEUR listeVariables POINT zoneInterfaces
+        | INDECLATELEPHONE listeVariables POINT zoneInterfaces
+        | INDECLATABLETTE listeVariables POINT zoneInterfaces
+        | INDECLATELECOMMANDE listeVariables POINT zoneInterfaces
+        | INDECLAMOBILE listeVariables POINT zoneInterfaces
+        | COMMENT zoneInterfaces 
+        | ;
+
+zoneScenarii ::= BALISEOUVRANTE BALISESCENARIO IDENT FINBALISE actionsScenario BALISEFERMANTE BALISESCENARIO IDENT FINBALISE zoneScenarii
+		| COMMENT zoneScenarii
+		| ;
+
+actionsScenario ::= IDENT POINT ACTIONS PTVIRGULE actionsScenario
+		| FORALL IDENT DEUXPOINTS APDECLA DO actionsScenario  DONE PTVIRGULE actionsScenario
+		| FORALL IDENT DEUXPOINTS IDENT DO actionsScenario DONE PTVIRGULE actionsScenario
+		| PRINT PAROUVRE message PARFERME PTVIRGULE actionsScenario
+		| EXESCENARIO IDENT PTVIRGULE actionsScenario
+		| IF PAROUVRE IDENT POINT ETAT DOUBLEGAL CHECKETAT PARFERME THEN actionsScenario ENDIF PTVIRGULE actionsScenario
+		| IF PAROUVRE IDENT POINT ETAT DOUBLEGAL CHECKETAT PARFERME THEN actionsScenario ELSE actionsScenario ENDIF PTVIRGULE actionsScenario
+        | COMMENT actionsScenario
+		| ;
+
+message ::= TEXT VIRG IDENT
+        | TEXT VIRG IDENT VIRG message
+        | TEXT VIRG IDENT POINT ETAT 
+        | TEXT VIRG IDENT POINT ETAT VIRG message
+        | TEXT;
+
+zoneCommande ::= COMASSOC IDENT EGAL IDENT POINT zoneCommande
+        | COMASSOC IDENT EGAL ACCOUVRE listeIdent ACCFERME POINT zoneCommande
+		| COMPROG IDENT EGAL parametresCOMPROG POINT zoneCommande
+		| COMPROG IDENT EGAL ACCOUVRE parametresCOMPROG ACCFERME POINT zoneCommande
+		| COMMENT zoneCommande
+		| ;
+
+listeIdent ::= IDENT VIRG listeIdent
+        | IDENT;
+
+parametresCOMPROG ::= PAROUVRE param param param param lastparam PARFERME VIRG parametresCOMPROG
+		|  PAROUVRE param param param param lastparam PARFERME 
+		| COMMENT ;
+
+param ::= ENTIER VIRG
+		| ARGVIDE VIRG;
+lastparam ::= ENTIER
+		| ARGVIDE;
+
+listeVariables ::= IDENT VIRG listeVariables
+        | IDENT;
