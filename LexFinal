@@ -63,7 +63,7 @@ baliseAppareils = "DECLARATION_APPAREILS"
 baliseInterfaces ="DECLARATION_INTERFACES"
 baliseScenarii = "DECLARATION_SCENARII"
 baliseScenario = "SCENARIO"
-ident = ["_"A-Za-z0-9]+
+ident = ("_"[a-zA-Z]|[a-zA-Z])["_"A-Za-z0-9]*
 commentaire = "//".*
 baliseCommandes = "DECLARATION_COMMANDES"
 
