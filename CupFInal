@@ -167,11 +167,12 @@ actionsScenario ::= IDENT POINT ACTIONS PTVIRGULE actionsScenario
         | COMMENT actionsScenario
 		| ;
 
-message ::= TEXT VIRG IDENT
-        | TEXT VIRG IDENT VIRG message
-        | TEXT VIRG IDENT POINT ETAT 
-        | TEXT VIRG IDENT POINT ETAT VIRG message
-        | TEXT;
+message ::= TEXT VIRG message
+        | IDENT VIRG message
+        | IDENT POINT ETAT VIRG message
+        | TEXT
+        | IDENT
+        | IDENT POINT ETAT;
 
 zoneCommande ::= COMASSOC IDENT EGAL IDENT POINT zoneCommande
         | COMASSOC IDENT EGAL ACCOUVRE listeIdent ACCFERME POINT zoneCommande
