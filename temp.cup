@@ -345,11 +345,16 @@ zoneInterfaces	::=	INDECLAINTERRUPTEUR:V listeVariables:K	{:
 				;
 
 
-zoneScenarii ::= BALISEOUVRANTE BALISESCENARIO IDENT:n {: String init = ""; contenuScenario.put(n,init); nomScenario=n; :} FINBALISE  actionsScenario:S BALISEFERMANTE BALISESCENARIO IDENT FINBALISE {: //maisonuser(nico)
-																	maisonuser_scenario = maisonuser_scenario+"String "+n+"_contenu = "+contenuScenario.get(n)+";\n";
-																	maisonuser_scenario=maisonuser_scenario+"CScenario "+n+" = new CScenario(\""+n+"\","+n+"_contenu);";
-																	maisonuser_scenario=maisonuser_scenario+"ma_liste_scenarios.add("+n+");";
-																	creation_maisonuser(maisonuser_scenario);
+    zoneScenarii ::= BALISEOUVRANTE BALISESCENARIO IDENT:n {: String init = ""; contenuScenario.put(n,init); nomScenario=n; :} FINBALISE  actionsScenario:S BALISEFERMANTE BALISESCENARIO IDENT FINBALISE {: /*maisonuser(nico)*/                                   String l1 = "\n     // Scenarios \n";
+                                                                    ficMaison = ficMaison+l1;
+                                                                    String maisonuser_scenario = "";
+
+			                                                        maisonuser_scenario = maisonuser_scenario+"     String "+nomScenario+"_contenu = "+contenuScenario.get(nomScenario)+";\n";
+	                                                                maisonuser_scenario=maisonuser_scenario+"   CScenario "+nomScenario+" = new CScenario(\""+nomScenario+"\","+nomScenario+"_contenu);\n";
+			                                                        maisonuser_scenario=maisonuser_scenario+"   ma_liste_scenarios.add("+nomScenario+");\n";
+                                                                    ficMaison = ficMaison+maisonuser_scenario;
+			                                                        creation_maisonuser(ficMaison);
+                                                                                              
                                                                     //habitat specifique(vincent)
                                                                     int numcase=numScenario.size();
                                                                     numScenario.put(n,numScenario.size());
@@ -359,13 +364,14 @@ zoneScenarii ::= BALISEOUVRANTE BALISESCENARIO IDENT:n {: String init = ""; cont
 		| COMMENT zoneScenarii
 		| ;
 
-actionsScenario ::= IDENT:ident POINT ACTIONS:act PTVIRGULE actionsScenario {: String l = "";
-                                                                   l = l+"\n				for(CAppareil appareil : this.l_appareils)\n 				if (appareil.getNomAppareil().equals(\""+ident+"\")) appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\n"; 
+actionsScenario ::= IDENT:idt POINT ACTIONS:act PTVIRGULE actionsScenario {: String l = "";
+                                                                   l = l+"\n				for(CAppareil appareil : this.l_appareils)\n 				if (appareil.getNomAppareil().equals(\""+idt+"\")) appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\n"; 
                                                                    RESULT = l;
                                                                    :}
-                                                                   {: String recup=""; 
-                                                                   recup=recup+"\" \\n				for(CAppareil appareil : this.l_appareils)\\n  \" +";
-                                                                   concatMap = contenuScenario.get(nomScenario);
+                                                                   {:String recup=""; 
+                                                                   recup=recup+" \" \\n				for(CAppareil appareil : this.l_appareils)\\n  \" + \n";
+                                                                   recup=recup+"\"	if(appareil.getNomAppareil().equals(\\\""+idt+"\\\") appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\n";
+                                                                   String concatMap = contenuScenario.get(nomScenario);
                                                                    concatMap = concatMap+recup;
                                                                    contenuScenario.put(nomScenario,concatMap);
                                                                    :}
@@ -384,7 +390,7 @@ actionsScenario ::= IDENT:ident POINT ACTIONS:act PTVIRGULE actionsScenario {: S
 		| IF PAROUVRE IDENT:ident POINT ETAT DOUBLEGAL CHECKETAT:cetat PARFERME THEN actionsScenario:act1 ELSE actionsScenario:act2 ENDIF PTVIRGULE actionsScenario {: String u="";
                                                                                                                             u=u+"				for(CAppareil appareil : this.l_appareils)\n 				if (appareil.typeAppareil.equals(TypeAppareil."+ident.toUpperCase()+"))\n 		if (appareil.etatAppareil.equals(TypeEtatAppareil."+cetat.toUpperCase()+")) \n"+act1+"\n 						else "+act2+"\n"; RESULT = u; :}
         | COMMENT actionsScenario
-		| ;
+		|  ;
 
 
 message ::= TEXT:a VIRG message:restemessage {: restemessage=restemessage+a; RESULT = restemessage; :}
