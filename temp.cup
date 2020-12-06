@@ -1,0 +1,434 @@
+// Specification JCup
+import java_cup.runtime.*;
+import java.util.*;
+import java.io.*;
+import java.lang.*;
+ 
+parser code {:
+
+	public static void main(String args[]) throws Exception {
+		new parser(new Yylex(new InputStreamReader(System.in))).parse();
+	}
+
+	public void syntax_error(Symbol cur_token) { 
+		// n'interrompt pas la compil... 
+		// on est par defaut dans l'etat error qui permet ensuite la recup
+		// par défaut : report_error("syntax error", null);
+		report_error("Syntaxe incorrecte <"+tokenToString(cur_token)+">", null);        
+	}
+
+	public void report_error(String message, Object info) {   
+		// n'interrompt pas la compil
+		if (info == null) System.err.println("Mon erreur <"+ ptext()+ "> ligne "+ pline() + ", colonne " + pcolumn() + " : " + message);
+		else System.err.println("Mon erreur <"+ptext()+ "> ligne "+ pline() + ", colonne " + pcolumn() + " : " +message+" : "+info);
+		System.err.println("-> mais on continue l'analyse... ");
+	}
+/* utiliser soit la précédante soit celle-ci si on veut ou pas continuer l'analyse une fois une erreur trouvée
+	public void unrecovered_syntax_error(Symbol cur_token) {
+    	// par defaut : report_fatal_error("Couldn't repair and continue parse", null);
+		// on n'a pas reussi a faire de la recup
+		report_fatal_error("Recuperation impossible <"+tokenToString(cur_token)+">", null);   // interrompt la compil     
+	}
+
+	public void report_fatal_error(String message, Object info) {  
+		// qd cette fct est appelee, message vaut par defaut "Couldn't repair and continue parse"
+		String m = "Mon erreur fatale <"+ ptext()+ "> ligne " + pline() + ", colonne " + pcolumn() + " : " + message;
+		if (info == null) System.err.println(m);
+		else System.err.println(m+" : "+info);
+		System.err.println("-> arrêt de l'analyse...");
+		done_parsing(); // interrompt la compil
+  	}*/
+
+	public int pline(){
+		return ((Yylex)getScanner()).getYyLine();
+	}
+	public int pcolumn(){
+		return ((Yylex)getScanner()).getYyColumn();
+	}
+	public String ptext(){
+		return ((Yylex)getScanner()).getYyText();
+	}
+
+
+public String tokenToString (Symbol token) {
+// qqs exemples pour voir...
+     switch (token.sym) {
+//	case sym.SI : return "SI"; 
+//	case sym.CHAINE : return "CHAINE "+token.value;  
+	case sym.ENTIER : return "ENTIER "+token.value;  
+	case sym.IDENT : return "58 "+token.value;
+	case sym.ARGVIDE : return "59 "+token.value;
+	case sym.POINT : return "60"+token.value;
+	case sym.VIRG : return "61 "+token.value;
+	case sym.EGAL : return " 62 "+token.value;
+	case sym.DOUBLEGAL : return " 63 "+token.value;
+	case sym.DEUXPOINTS : return "64 "+token.value;
+	case sym.PTVIRGULE : return "65 "+token.value;
+	case sym.PAROUVRE : return "66 "+token.value;
+	case sym.PARFERME : return "67 "+token.value;
+	case sym.ACCOUVRE : return "68 "+token.value;
+	case sym.ACCFERME : return "69 "+token.value;
+	case sym.APDECLA : return "71 "+token.value;
+	case sym.APDECLAENSEMBLE : return "77 "+token.value;  
+	case sym.INDECLAINTERRUPTEUR : return "78 "+token.value;  
+	case sym.INDECLAMOBILE : return "79 "+token.value;  
+	case sym.INDECLATELEPHONE : return "80 "+token.value;  
+	case sym.INDECLATABLETTE : return "81 "+token.value;  
+	case sym.INDECLATELECOMMANDE : return "82 "+token.value;  
+	case sym.FORALL : return "83 "+token.value;  
+	case sym.DO : return "84 "+token.value;  
+	case sym.DONE : return "85 "+token.value;  
+	case sym.IF : return "86 "+token.value;  
+	case sym.THEN : return "87 "+token.value;  
+	case sym.ELSE : return "88 "+token.value;  
+	case sym.ENDIF : return "89 "+token.value;  
+	case sym.PRINT : return "90 "+token.value;  
+	case sym.EXESCENARIO : return "91 "+token.value;  
+	case sym.COMASSOC : return "92 "+token.value;  
+	case sym.COMPROG : return "93 "+token.value;  
+	case sym.BALISEOUVRANTE : return "94 "+token.value;  
+	case sym.COMMENT : return "95 "+token.value;  
+	case sym.BALISEFERMANTE : return "96 "+token.value;   
+	case sym.FINBALISE : return "97 "+token.value;    
+	case sym.BALISEINIT : return "98 "+token.value;    
+	case sym.BALISEINTERFACE : return "99 "+token.value;    
+	case sym.BALISEAPPAREIL : return "100 "+token.value;    
+	case sym.BALISESCENARII : return "101 "+token.value;    
+	case sym.BALISESCENARIO : return "102 "+token.value;      
+	case sym.TEXT : return "103 "+token.value;      
+	case sym.BALISECOMMANDE : return "104 "+token.value;
+	//  ... A compléter !!
+	default : return "Token imprévu ou error";
+	}
+}
+
+:}
+
+
+
+action code {:
+
+String ficMaison="";
+String ficHabitat="";
+String nomScenario="";
+
+ArrayList<String> tableVar=new ArrayList<String>();
+ArrayList<String> tableApp=new ArrayList<String>();
+ArrayList<String> tableEns=new ArrayList<String>();
+
+Map<String,String> mapAppareil=new HashMap<String,String>();
+
+Map<String,String> mapInterface=new HashMap<String,String>();
+
+Map<String,ArrayList<String>> mapEnsemble=new HashMap<String,ArrayList<String>>();
+
+Map<String,Map<String,ArrayList<String>>> malisteEnsembleAppareils=new HashMap<String,Map<String,ArrayList<String>>>();  //Au cas où....
+
+Iterator<String> iter= tableVar.iterator();
+
+Map<String,Integer> numScenario = new HashMap<String,Integer>();
+
+Map<String,String> contenuScenario = new HashMap<String,String>();
+
+void exemple_de_fonction(String i1, String i2)
+{
+	String m = "Erreur syntaxique <"+i2+"> au lieu de <"+i1+">";
+	if (!(i1.equals(i2))) parser.report_error(m,null);	 
+}
+
+
+void creation_maisonuser(String s) throws IOException {
+	File fichier = new File("CMaisonUser.java") ;
+	PrintWriter out = new PrintWriter(new FileWriter(fichier)) ;
+	String entete="// CMaisonUser.java\n\npublic class CMaisonUser extends CMaison {\n\n  public CMaisonUser() {\n    super();\n\n";
+	String pied="  }\n}";
+	out.write(entete+s+pied);
+	out.close();
+}
+
+
+void creation_habitatspecific(String s) throws IOException {
+	File fichier = new File("HabitatSpecfic.java") ;
+	PrintWriter out = new PrintWriter(new FileWriter(fichier)) ;
+	String entete="// HabitatSpecific.java\n\nimport java.util.ArrayList;\n\npublic class HabitatSpecific extends Habitat {";
+	entete=entete+"\n\n  public HabitatSpecific(ArrayList<CAppareil> lapp, ArrayList<CEnsAppareil> lens, ArrayList<CScenario> lscen, ArrayList<CInterface> lint, ArrayList<CProgrammation> lprog)\n";
+    entete=entete+"       {\n           super(lapp,lens,lscen,lint,lprog);\n       }\n";
+	entete=entete+"\n	public void execScenarioNum(int num)\n\n	{\n		System.out.println( \"Execution du scenario \"+this.l_scenarios.get(num).getNomScenario()+\"... \");\n";
+	entete=entete+"\n		switch(num) {\n";
+	String pied="\n		default:\n			}\n		}\n	}";
+	out.write(entete+s+pied);
+	out.close();
+}
+
+:}
+
+terminal Integer ENTIER;
+
+terminal String ARGVIDE, POINT, VIRG, EGAL, DOUBLEGAL, DEUXPOINTS, PTVIRGULE, PAROUVRE, PARFERME, ACCOUVRE, ACCFERME,BALISEOUVRANTE,BALISEFERMANTE,COMMENT;
+terminal String FORALL, DO, DONE, IF, ETAT, CHECKETAT, THEN, ELSE, ENDIF, PRINT;
+
+terminal EXESCENARIO,COMASSOC,COMPROG,FINBALISE,BALISEINIT,BALISEINTERFACE,BALISEAPPAREIL,BALISESCENARII,BALISESCENARIO,BALISECOMMANDE;
+
+terminal String APDECLA,APDECLAENSEMBLE;
+terminal String IDENT, ACTIONS, TEXT;
+terminal String INDECLAINTERRUPTEUR, INDECLAMOBILE, INDECLATELEPHONE, INDECLATABLETTE, INDECLATELECOMMANDE;
+
+non terminal prog,liste,content1,content2,content3,content4,zoneAppareils,zoneInterfaces,zoneScenarii,zoneCommande,actionsScenario,parametresCOMPROG,listeIdent,param,lastparam,message;
+
+non terminal ArrayList<String> listeVariables,listeEns ;
+
+
+
+prog			::=	COMMENT prog
+				|	liste
+				|
+				;
+
+liste			::= BALISEOUVRANTE BALISEINIT FINBALISE content1 content2 content3 content4 BALISEFERMANTE BALISEINIT FINBALISE ;
+
+content1		::= BALISEOUVRANTE BALISEAPPAREIL FINBALISE zoneAppareils BALISEFERMANTE BALISEAPPAREIL FINBALISE 
+				|	COMMENT content1;
+
+content2		::= BALISEOUVRANTE BALISEINTERFACE FINBALISE zoneInterfaces BALISEFERMANTE BALISEINTERFACE FINBALISE 
+				|	COMMENT content2;
+
+content3		::= BALISEOUVRANTE BALISESCENARII FINBALISE zoneScenarii BALISEFERMANTE BALISESCENARII FINBALISE 
+				|	COMMENT content3;
+
+content4		::= BALISEOUVRANTE BALISECOMMANDE FINBALISE zoneCommande BALISEFERMANTE BALISECOMMANDE FINBALISE 
+				|	COMMENT content4;
+ 
+zoneAppareils	::=	APDECLA:V listeVariables:K	{: 
+													for(String s : K){
+														if(!mapAppareil.containsKey(s)) mapAppareil.put(s,V);
+													}
+
+												:}	POINT zoneAppareils														                                                         
+                                                                 
+        		|	APDECLAENSEMBLE IDENT:K EGAL ACCOUVRE listeEns:V	{:	
+
+																			ArrayList<String> temp=new ArrayList<String>();
+																			temp.addAll(V);
+																			mapEnsemble.put(K,temp);
+																																																							
+																		:} ACCFERME POINT {: tableEns.clear(); :} zoneAppareils 									
+																			  
+        		|	COMMENT zoneAppareils 
+        		
+				|	{:
+						String l0="\n    // Appareils\n\n";
+						ficMaison=ficMaison+l0;
+						creation_maisonuser(ficMaison);
+						for(Map.Entry e : mapAppareil.entrySet()){
+							String l="";
+							String val=(String)e.getValue();
+							if(val.length()>15 && val.substring(0,15).equals("autre_appareil(")){
+								String type1="CAutreAppareil ";
+								String type2="";
+								String temp=val.substring(15,val.length()-1);
+								
+									if(temp.equals("cafetiere")) 		type2="AUTRE_APPAREIL_CAFE";
+
+									if(temp.equals("tv"))				type2="AUTRE_APPAREIL_TV";
+
+									if(temp.equals("hifi"))				type2="AUTRE_APPAREIL_HIFI";		
+
+									if(temp.equals("video_proj"))		type2="AUTRE_APPAREIL_VP";
+
+									if(temp.equals("lave_linge"))		type2="AUTRE_APPAREIL_LL";
+
+									if(temp.equals("lave_vaisselle"))	type2="AUTRE_APPAREIL_LV";
+
+									if(temp.equals("seche_linge"))		type2="AUTRE_APPAREIL_SL";
+
+									if(temp.equals("portail"))			type2="AUTRE_APPAREIL_PORTAIL";
+								
+								l="    "+type1+e.getKey()+" = new "+ type1+"(\""+e.getKey()+"\",TypeAppareil."+type2+");\n";
+								l=l+"    ma_liste_appareils.add(" + e.getKey() + ")" + ";\n";
+							}	
+
+							else{	
+								
+								String type1="";
+								String type2="";
+								if(val.equals("volet") || val.equals("fenetre")){
+									type1="CVoletFenetre ";
+								}
+								else{
+									type1="C"+val.substring(0,1).toUpperCase()+val.substring(1)+" ";
+								}
+								type2=val.toUpperCase();
+								l="    "+ type1+ e.getKey() + " = new "+type1+"(\"" + e.getKey() + "\",TypeAppareil."+type2+");\n";
+								l=l+"    ma_liste_appareils.add(" + e.getKey() + ")" + ";\n";
+							}
+							ficMaison=ficMaison+l;
+							creation_maisonuser(ficMaison);
+						}
+						String l1="\n    //Ensemble d'appareils\n ";
+						ficMaison=ficMaison+l1;
+						creation_maisonuser(ficMaison);
+
+						for(Map.Entry e : mapEnsemble.entrySet()){
+							String l="\n    CEnsAppareil "+e.getKey()+" = new CEnsAppareil(\""+e.getKey()+"\");\n";
+							String l2="";
+							ArrayList<String> temp=(ArrayList<String>)e.getValue();
+							int dim=temp.size();
+							for(int i=0;i<dim;i++){
+								l2=l2+"    "+e.getKey()+".addAppareil("+temp.get(i)+");\n";
+							}
+							l2=l2+"    ma_liste_ens_appareils.add("+e.getKey()+");\n";
+							ficMaison=ficMaison+l+l2;
+							creation_maisonuser(ficMaison);
+
+						}
+				
+					:}
+				;
+
+zoneInterfaces	::=	INDECLAINTERRUPTEUR:V listeVariables:K	{:
+																for(String s : K){
+																	if(!mapInterface.containsKey(s) && !mapAppareil.containsKey(s)){
+																				mapInterface.put(s,V);
+																	}
+																}
+
+															:}	POINT	zoneInterfaces 
+
+        		|	INDECLATELEPHONE:V listeVariables:K {:
+															for(String s : K){
+																if(!mapInterface.containsKey(s) && !mapAppareil.containsKey(s))
+																			mapInterface.put(s,V);
+															}
+
+														:}	POINT	zoneInterfaces
+					
+				|	INDECLATABLETTE:V listeVariables:K	{:
+															for(String s : K){
+																if(!mapInterface.containsKey(s) && !mapAppareil.containsKey(s))
+																			mapInterface.put(s,V);
+															}
+
+														:}	POINT	zoneInterfaces
+
+		        |	INDECLATELECOMMANDE:V listeVariables:K	{:
+																for(String s : K){
+																	if(!mapInterface.containsKey(s) && !mapAppareil.containsKey(s))
+																				mapInterface.put(s,V);
+																}
+
+															:}	POINT	zoneInterfaces
+
+
+        		|	INDECLAMOBILE:V listeVariables:K 	{:
+															for(String s : K){
+																if(!mapInterface.containsKey(s) && !mapAppareil.containsKey(s))
+																	mapInterface.put(s,V);
+															}
+
+														:}	POINT	zoneInterfaces
+
+        		|	COMMENT zoneInterfaces 
+        
+				|	{:	
+						String l0="\n   // Interfaces\n\n";
+						ficMaison=ficMaison+l0;
+						creation_maisonuser(ficMaison);
+						for(Map.Entry e : mapInterface.entrySet()){
+							String type=(String)e.getValue();
+							String l="CInterface "+ e.getKey() + " = new CInterface(\"" + e.getKey() + "\",TypeInterface."+ type.toUpperCase()+");\n";
+							l="    "+l+"    ma_liste_interfaces.add(" + e.getKey() + ")" + ";\n";
+							ficMaison=ficMaison+l;
+							creation_maisonuser(ficMaison);
+							creation_habitatspecific(ficHabitat);
+						}
+					:}
+				;
+
+
+zoneScenarii ::= BALISEOUVRANTE BALISESCENARIO IDENT:n {: String init = ""; contenuScenario.put(n,init); nomScenario=n; :} FINBALISE  actionsScenario:S BALISEFERMANTE BALISESCENARIO IDENT FINBALISE {: //maisonuser(nico)
+																	maisonuser_scenario = maisonuser_scenario+"String "+n+"_contenu = "+contenuScenario.get(n)+";\n";
+																	maisonuser_scenario=maisonuser_scenario+"CScenario "+n+" = new CScenario(\""+n+"\","+n+"_contenu);";
+																	maisonuser_scenario=maisonuser_scenario+"ma_liste_scenarios.add("+n+");";
+																	creation_maisonuser(maisonuser_scenario);
+                                                                    //habitat specifique(vincent)
+                                                                    int numcase=numScenario.size();
+                                                                    numScenario.put(n,numScenario.size());
+                                                                    ficHabitat = ficHabitat+"\n			case "+numcase+":\n"+S+"			break;\n";
+                                                                    creation_habitatspecific(ficHabitat);
+ :} zoneScenarii 
+		| COMMENT zoneScenarii
+		| ;
+
+actionsScenario ::= IDENT:ident POINT ACTIONS:act PTVIRGULE actionsScenario {: String l = "";
+                                                                   l = l+"\n				for(CAppareil appareil : this.l_appareils)\n 				if (appareil.getNomAppareil().equals(\""+ident+"\")) appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\n"; 
+                                                                   RESULT = l;
+                                                                   :}
+                                                                   {: String recup=""; 
+                                                                   recup=recup+"\" \\n				for(CAppareil appareil : this.l_appareils)\\n  \" +";
+                                                                   concatMap = contenuScenario.get(nomScenario);
+                                                                   concatMap = concatMap+recup;
+                                                                   contenuScenario.put(nomScenario,concatMap);
+                                                                   :}
+		| FORALL IDENT DEUXPOINTS APDECLA:n DO actionsScenario:act  DONE PTVIRGULE actionsScenario {: String m = ""; 
+                                                                                                m = m+"				for(CAppareil appareil : this.l_appareils)\n				 if (appareil.typeAppareil.equals(TypeAppareil."+n.toUpperCase()+")) "+act; RESULT = m; :}
+		| FORALL IDENT DEUXPOINTS IDENT:id DO actionsScenario:act DONE PTVIRGULE actionsScenario {: String n = ""; 
+                                                                                                n = n+"				for(CAppareil appareil : this.l_appareils)\n				 if (appareil.typeAppareil.equals(TypeAppareil."+id.toUpperCase()+")) "+act; RESULT = n; :}
+		| PRINT PAROUVRE message:contenumessage PARFERME PTVIRGULE actionsScenario {: String o="";
+                                                                                      o = o+"System.out.println("+contenumessage+");\n"; 
+                                                                                      RESULT = o; :}
+		| EXESCENARIO IDENT:n PTVIRGULE actionsScenario {: String p="";
+                                                           p = p+"			this.exeScenario("+numScenario.get(n)+");\n"; 
+                                                           RESULT = p; :}
+		| IF PAROUVRE IDENT:ident POINT ETAT DOUBLEGAL CHECKETAT:cetat PARFERME THEN actionsScenario:act ENDIF PTVIRGULE actionsScenario {: String q="";
+                                                                                                                            q=q+"				for(CAppareil appareil : this.l_appareils)\n if (appareil.typeAppareil.equals(TypeAppareil."+ident.toUpperCase()+"))\n 			if (appareil.etatAppareil.equals(TypeEtatAppareil."+cetat.toUpperCase()+"))"+act; RESULT = q; :}
+		| IF PAROUVRE IDENT:ident POINT ETAT DOUBLEGAL CHECKETAT:cetat PARFERME THEN actionsScenario:act1 ELSE actionsScenario:act2 ENDIF PTVIRGULE actionsScenario {: String u="";
+                                                                                                                            u=u+"				for(CAppareil appareil : this.l_appareils)\n 				if (appareil.typeAppareil.equals(TypeAppareil."+ident.toUpperCase()+"))\n 		if (appareil.etatAppareil.equals(TypeEtatAppareil."+cetat.toUpperCase()+")) \n"+act1+"\n 						else "+act2+"\n"; RESULT = u; :}
+        | COMMENT actionsScenario
+		| ;
+
+
+message ::= TEXT:a VIRG message:restemessage {: restemessage=restemessage+a; RESULT = restemessage; :}
+        | IDENT VIRG message:restemessage {: restemessage=restemessage+"+appareil.getNomAppareil()+"; RESULT = restemessage; :}
+        | IDENT POINT ETAT VIRG message:restemessage {: restemessage=restemessage+"+appareil.etatAppareil+"; RESULT = restemessage; :}
+        | TEXT:d {: String res1=""; res1=res1+d; RESULT=res1; :}
+        | IDENT {: String res2=""; res2=res2+"+appareil.getNomAppareil()+"; RESULT = res2; :}
+        | IDENT POINT ETAT {: String res3=""; res3=res3+"+appareil.etatAppareil()+"; RESULT = res3; :};
+
+
+zoneCommande	::= COMASSOC IDENT EGAL IDENT POINT zoneCommande
+        		|	COMASSOC IDENT EGAL ACCOUVRE listeIdent ACCFERME POINT zoneCommande
+				|	COMPROG IDENT EGAL parametresCOMPROG POINT zoneCommande
+				|	COMPROG IDENT EGAL ACCOUVRE parametresCOMPROG ACCFERME POINT zoneCommande
+				|	COMMENT zoneCommande
+				|
+				;
+
+
+listeIdent 		::= IDENT VIRG listeIdent
+        		| 	IDENT
+				;
+
+
+parametresCOMPROG	::= PAROUVRE param param param param lastparam PARFERME VIRG parametresCOMPROG
+					|	PAROUVRE param param param param lastparam PARFERME 
+					| 	COMMENT ;
+
+
+param			::= ENTIER VIRG
+				|	ARGVIDE VIRG
+				;
+
+
+lastparam ::= ENTIER
+			| ARGVIDE
+			;
+
+
+listeVariables	::= IDENT:Id {: if(!tableVar.contains(Id)) tableVar.add(Id); RESULT=tableVar; :} VIRG listeVariables 
+        		|
+					IDENT:Id {: if(!tableVar.contains(Id)) tableVar.add(Id); RESULT=tableVar; :} ;
+
+
+listeEns		::= IDENT:Id {: if(!tableEns.contains(Id)) tableEns.add(Id); RESULT=tableEns; :} VIRG listeEns 
+        		|
+					IDENT:Id {: if(!tableEns.contains(Id)) tableEns.add(Id); RESULT=tableEns; :} ;
