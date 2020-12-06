@@ -111,10 +111,16 @@ action code {:
 String ficMaison="";
 String ficHabitat="";
 String nomScenario="";
+String assocCmd="\n\n    // Commandes association\n";
+String progCmd="\n    // Commandes programmation\n";
+String chaineId="";	// Création chaine de caractere par la liste des ident
+int incrProg=1;
+int incrDate=1;
 
 ArrayList<String> tableVar=new ArrayList<String>();
 ArrayList<String> tableApp=new ArrayList<String>();
 ArrayList<String> tableEns=new ArrayList<String>();
+ArrayList<String> tableprog=new ArrayList<String>();
 
 Map<String,String> mapAppareil=new HashMap<String,String>();
 
@@ -122,9 +128,9 @@ Map<String,String> mapInterface=new HashMap<String,String>();
 
 Map<String,ArrayList<String>> mapEnsemble=new HashMap<String,ArrayList<String>>();
 
-Map<String,Map<String,ArrayList<String>>> malisteEnsembleAppareils=new HashMap<String,Map<String,ArrayList<String>>>();  //Au cas où....
+//Map<String,Map<String,ArrayList<String>>> malisteEnsembleAppareils=new HashMap<String,Map<String,ArrayList<String>>>();  //Au cas où....
 
-Iterator<String> iter= tableVar.iterator();
+//Iterator<String> iter= tableVar.iterator();
 
 Map<String,Integer> numScenario = new HashMap<String,Integer>();
 
@@ -141,7 +147,8 @@ void creation_maisonuser(String s) throws IOException {
 	File fichier = new File("CMaisonUser.java") ;
 	PrintWriter out = new PrintWriter(new FileWriter(fichier)) ;
 	String entete="// CMaisonUser.java\n\npublic class CMaisonUser extends CMaison {\n\n  public CMaisonUser() {\n    super();\n\n";
-	String pied="  }\n}";
+	String pied="    // fin zone generee par projet compil\n\n    monHabitat = new HabitatSpecific";
+	pied+="(ma_liste_appareils,\n        ma_liste_ens_appareils, ma_liste_scenarios,\n            ma_liste_interfaces, ma_liste_programmation);\n  }\n}";
 	out.write(entete+s+pied);
 	out.close();
 }
@@ -164,19 +171,21 @@ void creation_habitatspecific(String s) throws IOException {
 
 terminal Integer ENTIER;
 
-terminal String ARGVIDE, POINT, VIRG, EGAL, DOUBLEGAL, DEUXPOINTS, PTVIRGULE, PAROUVRE, PARFERME, ACCOUVRE, ACCFERME,BALISEOUVRANTE,BALISEFERMANTE,COMMENT;
+terminal String ARGVIDE, POINT, VIRG, EGAL, DOUBLEGAL, DEUXPOINTS, PTVIRGULE, PAROUVRE, PARFERME, ACCOUVRE, ACCFERME, COMMENT;
+terminal String BALISEOUVRANTE,BALISEFERMANTE,FINBALISE,BALISEINIT,BALISEINTERFACE,BALISEAPPAREIL,BALISESCENARII,BALISESCENARIO,BALISECOMMANDE;
 terminal String FORALL, DO, DONE, IF, ETAT, CHECKETAT, THEN, ELSE, ENDIF, PRINT;
 
-terminal EXESCENARIO,COMASSOC,COMPROG,FINBALISE,BALISEINIT,BALISEINTERFACE,BALISEAPPAREIL,BALISESCENARII,BALISESCENARIO,BALISECOMMANDE;
+terminal EXESCENARIO,COMASSOC,COMPROG;
 
 terminal String APDECLA,APDECLAENSEMBLE;
 terminal String IDENT, ACTIONS, TEXT;
 terminal String INDECLAINTERRUPTEUR, INDECLAMOBILE, INDECLATELEPHONE, INDECLATABLETTE, INDECLATELECOMMANDE;
 
-non terminal prog,liste,content1,content2,content3,content4,zoneAppareils,zoneInterfaces,zoneScenarii,zoneCommande,actionsScenario,parametresCOMPROG,listeIdent,param,lastparam,message;
+non terminal prog,liste,content1,content2,content3,content4;
+non terminal zoneAppareils,zoneInterfaces,zoneScenarii,zoneCommande;
+non terminal actionsScenario,listeIdent,param,lastparam,message;
 
-non terminal ArrayList<String> listeVariables,listeEns ;
-
+non terminal ArrayList<String> listeVariables,listeEns,parametresCOMPROG;
 
 
 prog			::=	COMMENT prog
@@ -184,15 +193,17 @@ prog			::=	COMMENT prog
 				|
 				;
 
-liste			::= BALISEOUVRANTE BALISEINIT FINBALISE content1 content2 content3 content4 BALISEFERMANTE BALISEINIT FINBALISE ;
-
+liste			::= BALISEOUVRANTE BALISEINIT FINBALISE content1 content2 content3 content4 BALISEFERMANTE BALISEINIT FINBALISE {:
+																																	creation_maisonuser(ficMaison);
+																																	creation_habitatspecific(ficHabitat);
+																																:};
 content1		::= BALISEOUVRANTE BALISEAPPAREIL FINBALISE zoneAppareils BALISEFERMANTE BALISEAPPAREIL FINBALISE 
 				|	COMMENT content1;
 
 content2		::= BALISEOUVRANTE BALISEINTERFACE FINBALISE zoneInterfaces BALISEFERMANTE BALISEINTERFACE FINBALISE 
 				|	COMMENT content2;
 
-content3		::= BALISEOUVRANTE BALISESCENARII FINBALISE zoneScenarii BALISEFERMANTE BALISESCENARII FINBALISE 
+content3		::= BALISEOUVRANTE BALISESCENARII FINBALISE {:ficMaison=ficMaison+"\n    // Scenario\n";:} zoneScenarii BALISEFERMANTE BALISESCENARII FINBALISE 
 				|	COMMENT content3;
 
 content4		::= BALISEOUVRANTE BALISECOMMANDE FINBALISE zoneCommande BALISEFERMANTE BALISECOMMANDE FINBALISE 
@@ -332,49 +343,46 @@ zoneInterfaces	::=	INDECLAINTERRUPTEUR:V listeVariables:K	{:
 				|	{:	
 						String l0="\n   // Interfaces\n\n";
 						ficMaison=ficMaison+l0;
-						creation_maisonuser(ficMaison);
 						for(Map.Entry e : mapInterface.entrySet()){
 							String type=(String)e.getValue();
 							String l="CInterface "+ e.getKey() + " = new CInterface(\"" + e.getKey() + "\",TypeInterface."+ type.toUpperCase()+");\n";
 							l="    "+l+"    ma_liste_interfaces.add(" + e.getKey() + ")" + ";\n";
 							ficMaison=ficMaison+l;
-							creation_maisonuser(ficMaison);
-							creation_habitatspecific(ficHabitat);
 						}
 					:}
 				;
 
 
-    zoneScenarii ::= BALISEOUVRANTE BALISESCENARIO IDENT:n {: String init = ""; contenuScenario.put(n,init); nomScenario=n; :} FINBALISE  actionsScenario:S BALISEFERMANTE BALISESCENARIO IDENT FINBALISE {: /*maisonuser(nico)*/                                   String l1 = "\n     // Scenarios \n";
-                                                                    ficMaison = ficMaison+l1;
-                                                                    String maisonuser_scenario = "";
-
-			                                                        maisonuser_scenario = maisonuser_scenario+"     String "+nomScenario+"_contenu = "+contenuScenario.get(nomScenario)+";\n";
-	                                                                maisonuser_scenario=maisonuser_scenario+"   CScenario "+nomScenario+" = new CScenario(\""+nomScenario+"\","+nomScenario+"_contenu);\n";
-			                                                        maisonuser_scenario=maisonuser_scenario+"   ma_liste_scenarios.add("+nomScenario+");\n";
-                                                                    ficMaison = ficMaison+maisonuser_scenario;
-			                                                        creation_maisonuser(ficMaison);
-                                                                                              
-                                                                    //habitat specifique(vincent)
-                                                                    int numcase=numScenario.size();
-                                                                    numScenario.put(n,numScenario.size());
-                                                                    ficHabitat = ficHabitat+"\n			case "+numcase+":\n"+S+"			break;\n";
-                                                                    creation_habitatspecific(ficHabitat);
+zoneScenarii ::= BALISEOUVRANTE BALISESCENARIO IDENT:n {: String init = ""; contenuScenario.put(n,init); nomScenario=n; :} FINBALISE  actionsScenario:S BALISEFERMANTE BALISESCENARIO IDENT FINBALISE {:    ;
+																
+																String maisonuser_scenario = "";
+																maisonuser_scenario = maisonuser_scenario+"    String "+nomScenario+"_contenu = "+contenuScenario.get(nomScenario)+";\n";
+																maisonuser_scenario=maisonuser_scenario+"    CScenario "+nomScenario+" = new CScenario(\""+nomScenario+"\","+nomScenario+"_contenu);\n";
+																maisonuser_scenario=maisonuser_scenario+"   ma_liste_scenarios.add("+nomScenario+");\n";
+																ficMaison = ficMaison+maisonuser_scenario;
+																																							
+																int numcase=numScenario.size();
+																numScenario.put(n,numScenario.size());
+																ficHabitat = ficHabitat+"\n			case "+numcase+":\n"+S+"			break;\n";
+																creation_habitatspecific(ficHabitat);
+																
  :} zoneScenarii 
 		| COMMENT zoneScenarii
 		| ;
 
 actionsScenario ::= IDENT:idt POINT ACTIONS:act PTVIRGULE actionsScenario {: String l = "";
-                                                                   l = l+"\n				for(CAppareil appareil : this.l_appareils)\n 				if (appareil.getNomAppareil().equals(\""+idt+"\")) appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\n"; 
+                                                                   l = l+"\n     for(CAppareil appareil : this.l_appareils)\n 				if (appareil.getNomAppareil().equals(\""+idt+"\")) appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\n"; 
                                                                    RESULT = l;
                                                                    :}
-                                                                   {:String recup=""; 
+                                                                   {:
+																   String recup=""; 
                                                                    recup=recup+" \" \\n				for(CAppareil appareil : this.l_appareils)\\n  \" + \n";
                                                                    recup=recup+"\"	if(appareil.getNomAppareil().equals(\\\""+idt+"\\\") appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\n";
                                                                    String concatMap = contenuScenario.get(nomScenario);
                                                                    concatMap = concatMap+recup;
                                                                    contenuScenario.put(nomScenario,concatMap);
                                                                    :}
+																   
 		| FORALL IDENT DEUXPOINTS APDECLA:n DO actionsScenario:act  DONE PTVIRGULE actionsScenario {: String m = ""; 
                                                                                                 m = m+"				for(CAppareil appareil : this.l_appareils)\n				 if (appareil.typeAppareil.equals(TypeAppareil."+n.toUpperCase()+")) "+act; RESULT = m; :}
 		| FORALL IDENT DEUXPOINTS IDENT:id DO actionsScenario:act DONE PTVIRGULE actionsScenario {: String n = ""; 
@@ -401,34 +409,97 @@ message ::= TEXT:a VIRG message:restemessage {: restemessage=restemessage+a; RES
         | IDENT POINT ETAT {: String res3=""; res3=res3+"+appareil.etatAppareil()+"; RESULT = res3; :};
 
 
-zoneCommande	::= COMASSOC IDENT EGAL IDENT POINT zoneCommande
-        		|	COMASSOC IDENT EGAL ACCOUVRE listeIdent ACCFERME POINT zoneCommande
-				|	COMPROG IDENT EGAL parametresCOMPROG POINT zoneCommande
-				|	COMPROG IDENT EGAL ACCOUVRE parametresCOMPROG ACCFERME POINT zoneCommande
+zoneCommande	::= COMASSOC IDENT:id1 EGAL IDENT:id2 POINT {:																																
+																if(mapInterface.containsKey(id1) && numScenario.containsKey(id2))
+																	assocCmd+="    "+id1+".addScenarioAssocie(\""+id2+"\");\n";
+																
+															:}	zoneCommande
+
+
+				|	COMASSOC:a IDENT:id EGAL:b ACCOUVRE:c listeIdent:V ACCFERME:d POINT:e	{:	
+																					String[] tab=((String)V).split(",");
+																					for(String s: tab){
+																						
+																						if(mapInterface.containsKey(id) && numScenario.containsKey(s)){
+																							assocCmd+="    "+id+".addScenarioAssocie(\""+s+"\");\n";
+																						}
+																					}				
+																							:}zoneCommande	
+
+				|	COMPROG IDENT:id EGAL parametresCOMPROG:p POINT {:
+
+																	incrDate=1;
+																	String prog="p"+incrProg;
+																	String date=prog+"d"+incrDate;
+																	String P="    CProgrammation "+prog+" = new CProgrammation(\""+id+"\");\n";
+																	String D=P+"    CDate "+date+" = new CDate("+p.get(0)+");\n";
+																	String ajout=D+"    "+prog+".addDate("+date+");\n";
+																	String listProg=ajout+"    ma_liste_programmation.add("+prog+");\n\n";
+																	progCmd+=listProg;
+																	incrProg++;
+																	tableprog.clear();
+																	
+																	:}	zoneCommande
+
+
+				|	COMPROG IDENT:id EGAL ACCOUVRE parametresCOMPROG:p ACCFERME POINT	{:
+
+																					String prog="p"+incrProg;																					
+																					String ajout="";
+																					String P="    CProgrammation "+prog+" = new CProgrammation(\""+id+"\");\n";
+																					for(String s : p){
+																						String date=prog+"d"+incrDate;
+																						String D="    CDate "+date+" = new CDate("+s+");\n";
+																						ajout+=D+"    "+prog+".addDate("+date+");\n";
+																						incrDate++;
+																					}
+																					String listProg=P+ajout+"    ma_liste_programmation.add("+prog+");\n\n";
+																					progCmd+=listProg;
+																					incrProg++;
+																					tableprog.clear();
+																					
+																					:}zoneCommande 
 				|	COMMENT zoneCommande
-				|
+				|	{:	ficMaison+=	assocCmd+progCmd;	:}
 				;
 
 
-listeIdent 		::= IDENT VIRG listeIdent
-        		| 	IDENT
+listeIdent 		::=	IDENT:id VIRG listeIdent {: chaineId=id+","+chaineId; RESULT=chaineId;:}		
+				|	IDENT:id {: chaineId=id+chaineId; RESULT=","+chaineId;:}	
+				|	{: chaineId=""; :}
 				;
 
+parametresCOMPROG::= PAROUVRE param:a param:m param:j param:h lastparam:v PARFERME VIRG	{:
 
-parametresCOMPROG	::= PAROUVRE param param param param lastparam PARFERME VIRG parametresCOMPROG
-					|	PAROUVRE param param param param lastparam PARFERME 
+																							String s=a+","+m+","+j+","+h+","+v;
+																							tableprog.add(s);
+																							RESULT=tableprog;																											
+
+																							:} 	parametresCOMPROG
+
+
+					|	PAROUVRE param:a param:m param:j param:h lastparam:v PARFERME	{:
+					
+																						String s=a+","+m+","+j+","+h+","+v;
+																						tableprog.add(s);
+																						RESULT=tableprog;
+																						
+																						:}
+
 					| 	COMMENT ;
 
 
-param			::= ENTIER VIRG
-				|	ARGVIDE VIRG
+
+
+param			::= ENTIER:p VIRG {:RESULT=p;:}
+				|	ARGVIDE:p VIRG {:RESULT=-1;:}
 				;
 
 
-lastparam ::= ENTIER
-			| ARGVIDE
-			;
 
+lastparam		::= ENTIER:p {:RESULT=p;:}
+				| ARGVIDE:p {:RESULT=-1;:}
+				;
 
 listeVariables	::= IDENT:Id {: if(!tableVar.contains(Id)) tableVar.add(Id); RESULT=tableVar; :} VIRG listeVariables 
         		|
