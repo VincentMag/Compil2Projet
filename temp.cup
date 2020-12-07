@@ -116,6 +116,13 @@ String progCmd="\n    // Commandes programmation\n";
 String chaineId="";	// Création chaine de caractere par la liste des ident
 int incrProg=1;
 int incrDate=1;
+int numeroScenario=1;
+int nombreAppareils=0;
+int nombreInterfaces=0;
+int nombreScenarii=0;
+String associationInterfacesScenarii="";
+String nomscenariiprogrammes="";
+String nomscenariideclares="";
 
 ArrayList<String> tableVar=new ArrayList<String>();
 ArrayList<String> tableApp=new ArrayList<String>();
@@ -126,7 +133,6 @@ ArrayList<String> tableprog=new ArrayList<String>();
 String scenarioMaison="";
 String scenarioHabitat="";
 ArrayList<String> tabTextScenario=new ArrayList<String>();
-int limMaison=0;
 
 Map<String,Integer> numScenario = new HashMap<String,Integer>();
 
@@ -138,9 +144,48 @@ Map<String,ArrayList<String>> mapEnsemble=new HashMap<String,ArrayList<String>>(
 
 Map<String, ArrayList<String>> mapScenario= new HashMap<String,ArrayList<String>>();
 
+int formatDate(int a, int m , int j ,int h){
 
-void exemple_de_fonction(String i1, String i2)
-{
+                int b=0;
+
+                if((a==-1)|| (a>999 && a<10000)){
+
+                    if(m==1 || m==3 || m==5 || m==7 || m==8 || m==10 || m==12 || m==-1){
+						if((j>=1 && j<=31) || j==-1){
+                            if(h>=-1 && h<24) b=1;
+                        } 
+					}
+
+                    if(m==4 || m==6 || m==9 || m==11){
+						if(j==-1 || (j>0 && j<31)){
+                                if(h>=-1 && h<24) b=1;
+                        }
+                    }
+
+                    if(m==2){
+                        if(a%4==0 && a%100!=0){
+                            if(j==-1 || (j>0 && j<=29)){
+                                if(h>=-1 && h<24) b=1;   
+                            }
+                        }
+
+                        else{   if(a%400==0){
+                                    if(j==-1 || (j>0 && j<=29)){
+                                        if(h>=-1 && h<24) b=1;   
+                                    }
+                                }
+
+                                else {  if(j==-1 ||(j>0 && j<=28)){
+                                            if(h>=-1 && h<24) b=1;  
+                                        }                                  
+                                }
+                        }
+                    }
+				}
+                    return b;               
+}
+
+void exemple_de_fonction(String i1, String i2){
 	String m = "Erreur syntaxique <"+i2+"> au lieu de <"+i1+">";
 	if (!(i1.equals(i2))) parser.report_error(m,null);	 
 }
@@ -155,7 +200,6 @@ void creation_maisonuser(String s) throws IOException {
 	out.close();
 }
 
-
 void creation_habitatspecific(String s) throws IOException {
 	File fichier = new File("HabitatSpecfic.java") ;
 	PrintWriter out = new PrintWriter(new FileWriter(fichier)) ;
@@ -169,8 +213,22 @@ void creation_habitatspecific(String s) throws IOException {
 	out.close();
 }
 
-void aff(Object obj){System.out.println(obj);}
+void creation_resume() throws IOException {
+	File fichier = new File("ResumeDuProgramme.txt");
+	PrintWriter out=new PrintWriter(new FileWriter(fichier)) ;
+	String L="";
+	L+="Nombre d'appareils déclarés: "+nombreAppareils+"\n";
+	L+="Nombre d'interfaces déclarées: "+nombreInterfaces+"\n";
+	L+=associationInterfacesScenarii+"\n";
+	L+="Nombre de Scenarii déclarés: "+nombreScenarii+"\n";
+	L+="Noms des scenarii déclarés:\n"+nomscenariideclares+"\n";
+	L+="Nom des scenarii programmés:\n"+nomscenariiprogrammes+"\n";
+	out.write(L);
+	out.close();
+}
 
+	
+	
 String sp(int n){ String sp=""; for(int i=1;i<=n;i++){sp+=" ";} return sp;}
 
 :}
@@ -189,8 +247,9 @@ terminal String INDECLAINTERRUPTEUR, INDECLAMOBILE, INDECLATELEPHONE, INDECLATAB
 
 non terminal prog,liste,content1,content2,content3,content4;
 non terminal zoneAppareils,zoneInterfaces,zoneScenarii,zoneCommande;
-non terminal listeIdent,param,lastparam,message;
+non terminal listeIdent,lastparam,message;
 
+non terminal Integer param;
 non terminal ArrayList<String> listeVariables,listeEns,parametresCOMPROG;
 non terminal Map<String,ArrayList<String>> actionsScenario;		
 
@@ -204,6 +263,7 @@ prog			::=	COMMENT prog
 liste			::= BALISEOUVRANTE BALISEINIT FINBALISE content1 content2 content3 content4 BALISEFERMANTE BALISEINIT FINBALISE {:
 																																	creation_maisonuser(ficMaison);
 																																	creation_habitatspecific(ficHabitat);
+																																	creation_resume();
 																																:};
 content1		::= BALISEOUVRANTE BALISEAPPAREIL FINBALISE zoneAppareils BALISEFERMANTE BALISEAPPAREIL FINBALISE 
 				|	COMMENT content1;
@@ -219,7 +279,10 @@ content4		::= BALISEOUVRANTE BALISECOMMANDE FINBALISE zoneCommande BALISEFERMANT
  
 zoneAppareils	::=	APDECLA:V listeVariables:K	{: 
 													for(String s : K){
-														if(!mapAppareil.containsKey(s)) mapAppareil.put(s,V);
+														if(!mapAppareil.containsKey(s)){ 
+															mapAppareil.put(s,V);
+															nombreAppareils++;
+														}
 													}
 
 												:}	POINT zoneAppareils														                                                         
@@ -237,7 +300,6 @@ zoneAppareils	::=	APDECLA:V listeVariables:K	{:
 				|	{:
 						String l0="\n    // Appareils\n\n";
 						ficMaison=ficMaison+l0;
-						creation_maisonuser(ficMaison);
 						for(Map.Entry e : mapAppareil.entrySet()){
 							String l="";
 							String val=(String)e.getValue();
@@ -281,11 +343,10 @@ zoneAppareils	::=	APDECLA:V listeVariables:K	{:
 								l=l+"    ma_liste_appareils.add(" + e.getKey() + ")" + ";\n";
 							}
 							ficMaison=ficMaison+l;
-							creation_maisonuser(ficMaison);
 						}
 						String l1="\n    //Ensemble d'appareils\n ";
 						ficMaison=ficMaison+l1;
-						creation_maisonuser(ficMaison);
+						
 
 						for(Map.Entry e : mapEnsemble.entrySet()){
 							String l="\n    CEnsAppareil "+e.getKey()+" = new CEnsAppareil(\""+e.getKey()+"\");\n";
@@ -297,8 +358,6 @@ zoneAppareils	::=	APDECLA:V listeVariables:K	{:
 							}
 							l2=l2+"    ma_liste_ens_appareils.add("+e.getKey()+");\n";
 							ficMaison=ficMaison+l+l2;
-							creation_maisonuser(ficMaison);
-
 						}
 				
 					:}
@@ -356,6 +415,7 @@ zoneInterfaces	::=	INDECLAINTERRUPTEUR:V listeVariables:K	{:
 							String l="CInterface "+ e.getKey() + " = new CInterface(\"" + e.getKey() + "\",TypeInterface."+ type.toUpperCase()+");\n";
 							l="    "+l+"    ma_liste_interfaces.add(" + e.getKey() + ")" + ";\n";
 							ficMaison=ficMaison+l;
+							nombreInterfaces++;
 						}
 					:}
 				;
@@ -364,22 +424,24 @@ zoneInterfaces	::=	INDECLAINTERRUPTEUR:V listeVariables:K	{:
 /*************************/
 
 
-zoneScenarii 	::= BALISEOUVRANTE BALISESCENARIO IDENT:id1 {:nomScenario=id1;:} FINBALISE  actionsScenario:act BALISEFERMANTE BALISESCENARIO IDENT:id2 FINBALISE
+zoneScenarii 	::= BALISEOUVRANTE BALISESCENARIO IDENT:id1 {: nombreScenarii++; nomscenariideclares+=id1+"\n"; nomScenario=id1;:} FINBALISE  actionsScenario:act BALISEFERMANTE BALISESCENARIO IDENT:id2 FINBALISE
 									{:
 									tableScn.add(id1);
 									int numcase=numScenario.size();
                                     numScenario.put(id1,numScenario.size());
                                     ficHabitat = ficHabitat+"\n			case "+numcase+":\n"+act+"			break;\n";
 									
-									String L=sp(4)+"String "+id1+"_contenu=";
+									String L=sp(4)+"String "+id1+"_contenu = \"\\n"+sp(7);
 									for(int i=0;i<mapScenario.get(id1).size();i++)
-										L+=mapScenario.get(id1).get(i);
-									ficMaison+=L+"\n";
-
+										L+=mapScenario.get(id1).get(i)+sp(7)+"\"";
+									L=L.substring(0,L.length()-11);
+									L+="\n"+sp(4)+"CScenario "+id1+" = new CScenario(\""+id1+"\","+id1+"_contenu);\n";
+    								L+=sp(4)+"ma_liste_scenarios.add("+id1+");";
+									ficMaison+=L+"\n\n";
 	
 									mapScenario.remove(id1);
 									tabTextScenario.clear();
-
+									numeroScenario++;
 
 									:} zoneScenarii 
 										
@@ -391,8 +453,8 @@ actionsScenario ::= IDENT:id POINT ACTIONS:act PTVIRGULE actionsScenario	{:
 											
 								//CMaisonUser
 
-								String L=sp(7)+"for(CAppareil appareil : this.l_appareils)\\n"+sp(5)+"\" +\n";
-								L+=sp(7)+"\""+sp(3)+"if (appareil.getNomAppareil().equals(\\\""+id+"\\\")) appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\\n"+sp(5)+"\" +\n";
+								String L="for(CAppareil appareil : this.l_appareils)\\n"+sp(5)+"\" +\n";
+								L+=sp(7)+"\""+sp(2)+"if(appareil.getNomAppareil().equals(\\\""+id+"\\\")) appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\\n"+sp(5)+"\" +\n";
 								scenarioMaison+="\n"+L+act;
 								tabTextScenario.add(L);
 					
@@ -412,15 +474,51 @@ actionsScenario ::= IDENT:id POINT ACTIONS:act PTVIRGULE actionsScenario	{:
       
 																   
 				| FORALL IDENT:id DEUXPOINTS APDECLA:nom DO actionsScenario:act  DONE PTVIRGULE actionsScenario 
-				
-		
+
 				| FORALL IDENT:id1 DEUXPOINTS IDENT:id2 DO actionsScenario:act DONE PTVIRGULE 											
 
+				| PRINT PAROUVRE message:contenumessage PARFERME PTVIRGULE actionsScenario {:
+
+															String L=sp(7)+"System.out.println(\\\""+contenumessage+"\");\\n"+sp(5)+"\"+";
+															scenarioMaison+="\n"+L;
+															tabTextScenario.add(L);
+					
+
+															//HabitatSpecific
+
+
+															scenarioHabitat="";	//à remplir
+															
+															//Remplir tabTextScenario
+
+															//Remplissage du mapScenario
+					
+															mapScenario.put(nomScenario,tabTextScenario);
+															RESULT=mapScenario;									
+				
+																							:}
 		
-				| PRINT PAROUVRE message:contenumessage PARFERME PTVIRGULE actionsScenario 
 		
-		
-				| EXESCENARIO IDENT:id PTVIRGULE actionsScenario 														
+				| EXESCENARIO IDENT:id PTVIRGULE actionsScenario	{:
+
+															//CMMaisonUser
+
+															String L=sp(7)+"this.execScenarioNum("+numeroScenario+");\\n"+sp(5)+"\" +";
+															scenarioMaison+="\n"+L;
+															tabTextScenario.add(L);
+
+															//HabitatSpecific
+
+															scenarioHabitat="";	//à remplir
+															
+															//Remplir tabTextScenario
+
+															//Remplissage du mapScenario
+					
+															mapScenario.put(nomScenario,tabTextScenario);
+															RESULT=mapScenario;	
+
+																	:}														
 		
 		
 				| IF PAROUVRE IDENT:id POINT ETAT DOUBLEGAL CHECKETAT:cetat PARFERME THEN actionsScenario:act ENDIF PTVIRGULE actionsScenario
@@ -444,31 +542,35 @@ message 		::= TEXT:a VIRG message:restemessage {: restemessage=restemessage+a; R
 zoneCommande	::= COMASSOC IDENT:id1 EGAL IDENT:id2 POINT {:																																
 																if(mapInterface.containsKey(id1) && numScenario.containsKey(id2))
 																	assocCmd+="    "+id1+".addScenarioAssocie(\""+id2+"\");\n";
-																
+																	associationInterfacesScenarii+="Association du scenarii: "+id2+" à interface "+id1+".\n";
 															:}	zoneCommande
 
 
-				|	COMASSOC:a IDENT:id EGAL:b ACCOUVRE:c listeIdent:V ACCFERME:d POINT:e	{:	
+				|	COMASSOC IDENT:id EGAL ACCOUVRE listeIdent:V ACCFERME POINT	{:	
 																					String[] tab=((String)V).split(",");
 																					for(String s: tab){
-																						
-																						if(mapInterface.containsKey(id) && numScenario.containsKey(s)){
+																							if(mapInterface.containsKey(id) && numScenario.containsKey(s)){
 																							assocCmd+="    "+id+".addScenarioAssocie(\""+s+"\");\n";
+																							associationInterfacesScenarii+="Association du scenarii: "+id+" à interface "+s+".\n";	
 																						}
 																					}				
-																							:}zoneCommande	
+																				
+																				:}zoneCommande	
 
 				|	COMPROG IDENT:id EGAL parametresCOMPROG:p POINT {:
 
-																	incrDate=1;
-																	String prog="p"+incrProg;
-																	String date=prog+"d"+incrDate;
-																	String P="    CProgrammation "+prog+" = new CProgrammation(\""+id+"\");\n";
-																	String D=P+"    CDate "+date+" = new CDate("+p.get(0)+");\n";
-																	String ajout=D+"    "+prog+".addDate("+date+");\n";
-																	String listProg=ajout+"    ma_liste_programmation.add("+prog+");\n\n";
-																	progCmd+=listProg;
-																	incrProg++;
+																	if(numScenario.containsKey(id)){
+																		incrDate=1;
+																		String prog="p"+incrProg;
+																		String date=prog+"d"+incrDate;
+																		String P="    CProgrammation "+prog+" = new CProgrammation(\""+id+"\");\n";
+																		String D=P+"    CDate "+date+" = new CDate("+p.get(0)+");\n";
+																		String ajout=D+"    "+prog+".addDate("+date+");\n";
+																		String listProg=ajout+"    ma_liste_programmation.add("+prog+");\n\n";
+																		progCmd+=listProg;
+																		incrProg++;
+																		nomscenariiprogrammes+=id+"\n";
+																	}
 																	tableprog.clear();
 																	
 																	:}	zoneCommande
@@ -488,6 +590,7 @@ zoneCommande	::= COMASSOC IDENT:id1 EGAL IDENT:id2 POINT {:
 																					String listProg=P+ajout+"    ma_liste_programmation.add("+prog+");\n\n";
 																					progCmd+=listProg;
 																					incrProg++;
+																					nomscenariiprogrammes+=id+"\n";
 																					tableprog.clear();
 																					
 																					:}zoneCommande 
@@ -502,20 +605,21 @@ listeIdent 		::=	IDENT:id VIRG listeIdent {: chaineId=id+","+chaineId; RESULT=ch
 				;
 
 parametresCOMPROG::= PAROUVRE param:a param:m param:j param:h lastparam:v PARFERME VIRG	{:
+																							if(formatDate(a,m,j,h)==1){
+																									String s=a+","+m+","+j+","+h+","+v;
+																									tableprog.add(s);
+																									RESULT=tableprog;																											
+																							}
+																						:} 	parametresCOMPROG
 
-																							String s=a+","+m+","+j+","+h+","+v;
-																							tableprog.add(s);
-																							RESULT=tableprog;																											
-
-																							:} 	parametresCOMPROG
-
-
+																							
 					|	PAROUVRE param:a param:m param:j param:h lastparam:v PARFERME	{:
-					
-																						String s=a+","+m+","+j+","+h+","+v;
-																						tableprog.add(s);
-																						RESULT=tableprog;
-																						
+
+																							if(formatDate(a,m,j,h)==1){
+																								String s=a+","+m+","+j+","+h+","+v;
+																								tableprog.add(s);
+																								RESULT=tableprog;
+																							}
 																						:}
 
 					| 	COMMENT ;
