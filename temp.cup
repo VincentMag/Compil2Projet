@@ -132,6 +132,7 @@ ArrayList<String> tableprog=new ArrayList<String>();
 
 String scenarioMaison="";
 String scenarioHabitat="";
+
 ArrayList<String> tabTextScenario=new ArrayList<String>();
 
 Map<String,Integer> numScenario = new HashMap<String,Integer>();
@@ -227,9 +228,8 @@ void creation_resume() throws IOException { //fonction qui écrit le fichier de 
 	out.close();
 }
 
-	
-	
-String sp(int n){ String sp=""; for(int i=1;i<=n;i++){sp+=" ";} return sp;} //fonction qui permet d'ajouter un nombre n d'espace à des Strings
+String sp(int n){ String sp=""; for(int i=1;i<=n;i++){sp+=" ";} return sp; //fonction qui permet d'ajouter un nombre n d'espace à des Strings
+}
 
 :}
 
@@ -421,7 +421,6 @@ zoneInterfaces	::=	INDECLAINTERRUPTEUR:V listeVariables:K	{:
 				;
 
 
-/*************************/
 
 
 zoneScenarii 	::= BALISEOUVRANTE BALISESCENARIO IDENT:id1 {: nombreScenarii++; nomscenariideclares+=id1+"\n"; nomScenario=id1;:} FINBALISE  actionsScenario:act BALISEFERMANTE BALISESCENARIO IDENT:id2 FINBALISE
@@ -451,28 +450,21 @@ zoneScenarii 	::= BALISEOUVRANTE BALISESCENARIO IDENT:id1 {: nombreScenarii++; n
 
 actionsScenario ::= IDENT:id POINT ACTIONS:act PTVIRGULE actionsScenario:suite	{:
 											
-								    //CMaisonUser
-
+								    
 								    String L="for(CAppareil appareil : this.l_appareils)\\n"+sp(5)+"\" +\n";
-								    L+=sp(7)+"\""+sp(2)+"if(appareil.getNomAppareil().equals(\\\""+id+"\\\")) appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\\n"+sp(5)+"\" +\n";
+								    L+=sp(7)+"\""+sp(3)+"if (appareil.getNomAppareil().equals(\\\""+id+"\\\")) appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\\n"+sp(5)+"\" +\n";
 								    scenarioMaison+="\n"+L+act;
 								    tabTextScenario.add(L);
 					    
 
-								    //HabitatSpecific
-
-
-								    scenarioHabitat="";	//à remplir
+								    scenarioHabitat="";
                                     scenarioHabitat+="\n"+sp(5)+"for(CAppareil appareil : this.l_appareils)\n"+sp(8)+" if (appareil.getNomAppareil().equals(\""+id+"\"))";
                                     scenarioHabitat+=" appareil.appliquer(TypeActionAppareil."+act.toUpperCase()+");\n"; 
-								    //Remplir tabTextScenario
-
-								    //Remplissage du mapScenario
+								    
 					    
 								    mapScenario.put(nomScenario,tabTextScenario);
 								    RESULT=scenarioHabitat+suite;
-										
-																			:}
+																				:}
       
 																   
 				| FORALL IDENT:id DEUXPOINTS APDECLA:nom DO actionsScenario:act  DONE PTVIRGULE actionsScenario:suite {: 
@@ -488,20 +480,17 @@ actionsScenario ::= IDENT:id POINT ACTIONS:act PTVIRGULE actionsScenario:suite	{
 
 				| PRINT PAROUVRE message:contenumessage PARFERME PTVIRGULE actionsScenario:suite {:
 
-															String L=sp(7)+"System.out.println(\\\""+contenumessage+"\");\\n"+sp(5)+"\"+";
+															String cont=(String) contenumessage;
+															String car1="\"";
+															String car2=",";
+															cont=cont.replaceAll(car1,"");
+															cont=cont.replaceAll(car2,"");
+															String L=sp(7)+"System.out.println(\\\""+cont+"\\\");\\n"+sp(5)+"\" +\n";
 															scenarioMaison+="\n"+L;
 															tabTextScenario.add(L);
 					
-
-															//HabitatSpecific
-
-
 															scenarioHabitat+="System.out.println("+contenumessage+");\n";
 															 
-															//Remplir tabTextScenario
-
-															//Remplissage du mapScenario
-					
 															mapScenario.put(nomScenario,tabTextScenario);
 															RESULT=scenarioHabitat+suite;								
 				
@@ -509,28 +498,34 @@ actionsScenario ::= IDENT:id POINT ACTIONS:act PTVIRGULE actionsScenario:suite	{
 		
 		
 				| EXESCENARIO IDENT:id PTVIRGULE actionsScenario:suite	{:
-
-															//CMMaisonUser
-
-															String L=sp(7)+"this.execScenarioNum("+numeroScenario+");\\n"+sp(5)+"\" +";
-															scenarioMaison+="\n"+L;
-															tabTextScenario.add(L);
-
-															//HabitatSpecific
+															
+															Integer numsc=-1;
+															for (Map.Entry e: numScenario.entrySet()) {
+																if (e.getKey().equals((String)id)) {
+																	numsc=(Integer)e.getValue();
+																}
+    														}
+															numsc++;
+															if(numsc!=0){
+																String L=sp(7)+"this.execScenarioNum("+numsc+");\\n"+sp(5)+"\" +";
+																scenarioMaison+="\n"+L;
+																tabTextScenario.add(L);
+															}
 
 															scenarioHabitat+=sp(5)+"this.exeScenario("+numScenario.get(id)+");\n";
-															
-															//Remplir tabTextScenario
-
-															//Remplissage du mapScenario
-					
 															mapScenario.put(nomScenario,tabTextScenario);
 															RESULT=scenarioHabitat+suite;
-
-																	:}														
+															
+																		:}														
 		
 		
 				| IF PAROUVRE IDENT:id POINT ETAT DOUBLEGAL CHECKETAT:cetat PARFERME THEN actionsScenario:act ENDIF PTVIRGULE actionsScenario:suite {:  
+
+															String L="for(CAppareil appareil : this.l_appareils)\\n"+sp(5)+"\" +\n";
+															L+=sp(7)+"\""+sp(3)+"if (appareil.getNomAppareil().equals(\\\""+id+"\\\"))\\n"+sp(5)+"\" +\n";
+															L+=sp(7)+"\""+sp(6)+"if (appareil.etatAppareil.equals(TypeEtatAppareil."+cetat.toUpperCase()+")) appareil.appliquer(TypeActionAppareil."+"Probleme"+");\\n"+sp(5)+"\" +\n";
+															scenarioMaison+="\n"+L+act;
+															tabTextScenario.add(L);
 
                                                             scenarioHabitat+=sp(5)+"for(CAppareil appareil : this.l_appareils)\n" ;
                                                             scenarioHabitat+=sp(7)+"if (appareil.typeAppareil.equals(TypeAppareil."+id.toUpperCase()+"))\n ";
@@ -548,8 +543,7 @@ actionsScenario ::= IDENT:id POINT ACTIONS:act PTVIRGULE actionsScenario:suite	{
                                                             RESULT=scenarioHabitat+suite;
                                                                                                                                                                                 :}
 										
-				| COMMENT actionsScenario
-		
+				| COMMENT actionsScenario		
 				| {: RESULT=""; :} ;
 
 
