@@ -196,13 +196,13 @@ void creation_maisonuser(String s) throws IOException { //fonction qui écrit le
 	PrintWriter out = new PrintWriter(new FileWriter(fichier)) ;
 	String entete="// CMaisonUser.java\n\npublic class CMaisonUser extends CMaison {\n\n  public CMaisonUser() {\n    super();\n\n";
 	String pied="    // fin zone generee par projet compil\n\n    monHabitat = new HabitatSpecific";
-	pied+="(ma_liste_appareils,\n        ma_liste_ens_appareils, ma_liste_scenarios,\n            ma_liste_interfaces, ma_liste_programmation);\n  }\n}";
+	pied+="(ma_liste_appareils,\n        ma_liste_ens_appareils, ma_liste_scenarios,\n            ma_liste_interfaces, ma_liste_programmations);\n  }\n}";
 	out.write(entete+s+pied);
 	out.close();
 }
 
 void creation_habitatspecific(String s) throws IOException { //fonction qui écrit le fichier HabitatSpecific avec entête, pied de fichier et corps s
-	File fichier = new File("HabitatSpecfic.java") ;
+	File fichier = new File("HabitatSpecific.java") ;
 	PrintWriter out = new PrintWriter(new FileWriter(fichier)) ;
 	String entete="// HabitatSpecific.java\n\nimport java.util.ArrayList;\n\npublic class HabitatSpecific extends Habitat {";
 	entete=entete+"\n\n  public HabitatSpecific(ArrayList<CAppareil> lapp, ArrayList<CEnsAppareil> lens, ArrayList<CScenario> lscen, ArrayList<CInterface> lint, ArrayList<CProgrammation> lprog)\n";
@@ -291,6 +291,7 @@ zoneAppareils	::=	APDECLA:V listeVariables:K	{:
 
 																			ArrayList<String> temp=new ArrayList<String>();
 																			temp.addAll(V);
+																			for(int i=0;i<temp.size();i++){if(!mapAppareil.containsKey(temp.get(i))) temp.remove(i);}
 																			mapEnsemble.put(K,temp);
 																																																							
 																		:} ACCFERME POINT {: tableEns.clear(); :} zoneAppareils 									
@@ -433,7 +434,7 @@ zoneScenarii 	::= BALISEOUVRANTE BALISESCENARIO IDENT:id1 {: nombreScenarii++; n
 									String L=sp(4)+"String "+id1+"_contenu = \"\\n"+sp(7);
 									for(int i=0;i<mapScenario.get(id1).size();i++)
 										L+=mapScenario.get(id1).get(i)+sp(7)+"\"";
-									L=L.substring(0,L.length()-11);
+									L=L.substring(0,L.length()-11)+";";
 									L+="\n"+sp(4)+"CScenario "+id1+" = new CScenario(\""+id1+"\","+id1+"_contenu);\n";
     								L+=sp(4)+"ma_liste_scenarios.add("+id1+");";
 									ficMaison+=L+"\n\n";
@@ -507,7 +508,7 @@ actionsScenario ::= IDENT:id POINT ACTIONS:act PTVIRGULE actionsScenario:suite	{
     														}
 															numsc++;
 															if(numsc!=0){
-																String L=sp(7)+"this.execScenarioNum("+numsc+");\\n"+sp(5)+"\" +";
+																String L=sp(7)+"this.execScenarioNum("+numsc+");\"\n"+sp(5)+"\" +";
 																scenarioMaison+="\n"+L;
 																tabTextScenario.add(L);
 															}
@@ -582,7 +583,7 @@ zoneCommande	::= COMASSOC IDENT:id1 EGAL IDENT:id2 POINT {:
 																		String P="    CProgrammation "+prog+" = new CProgrammation(\""+id+"\");\n";
 																		String D=P+"    CDate "+date+" = new CDate("+p.get(0)+");\n";
 																		String ajout=D+"    "+prog+".addDate("+date+");\n";
-																		String listProg=ajout+"    ma_liste_programmation.add("+prog+");\n\n";
+																		String listProg=ajout+"    ma_liste_programmations.add("+prog+");\n\n";
 																		progCmd+=listProg;
 																		incrProg++;
 																		nomscenariiprogrammes+=id+"\n";
@@ -598,12 +599,14 @@ zoneCommande	::= COMASSOC IDENT:id1 EGAL IDENT:id2 POINT {:
 																					String ajout="";
 																					String P="    CProgrammation "+prog+" = new CProgrammation(\""+id+"\");\n";
 																					for(String s : p){
-																						String date=prog+"d"+incrDate;
-																						String D="    CDate "+date+" = new CDate("+s+");\n";
-																						ajout+=D+"    "+prog+".addDate("+date+");\n";
-																						incrDate++;
+																						if(numScenario.containsKey(s)){
+																							String date=prog+"d"+incrDate;
+																							String D="    CDate "+date+" = new CDate("+s+");\n";
+																							ajout+=D+"    "+prog+".addDate("+date+");\n";
+																							incrDate++;
+																						}
 																					}
-																					String listProg=P+ajout+"    ma_liste_programmation.add("+prog+");\n\n";
+																					String listProg=P+ajout+"    ma_liste_programmations.add("+prog+");\n\n";
 																					progCmd+=listProg;
 																					incrProg++;
 																					nomscenariiprogrammes+=id+"\n";
