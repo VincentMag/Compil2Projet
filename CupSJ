@@ -182,8 +182,9 @@ zoneScenarii 	::= BALISEOUVRANTE BALISESCENARIO IDENT FINBALISE actionsScenario 
 actionsScenario ::= IDENT:id POINT ACTIONS:act PTVIRGULE actionsScenario
       
 																   
-		| FORALL IDENT DEUXPOINTS APDECLA:nom DO actionsScenario  DONE PTVIRGULE actionsScenario
-                | FORALL IDENT DEUXPOINTS IDENT:nom DO actionsScenario  DONE PTVIRGULE actionsScenario															
+		| FORALL IDENT DEUXPOINTS APDECLA DO actionsScenario  DONE PTVIRGULE actionsScenario
+		
+                | FORALL IDENT DEUXPOINTS IDENT DO actionsScenario  DONE PTVIRGULE actionsScenario															
 
 		| PRINT PAROUVRE message PARFERME PTVIRGULE actionsScenario
 		
@@ -191,7 +192,7 @@ actionsScenario ::= IDENT:id POINT ACTIONS:act PTVIRGULE actionsScenario
 		
 		| IF PAROUVRE IDENT POINT ETAT DOUBLEGAL CHECKETAT PARFERME THEN actionsScenario ENDIF PTVIRGULE actionsScenario																															
 		
-		| IF PAROUVRE IDENT:id POINT ETAT DOUBLEGAL CHECKETAT PARFERME THEN actionsScenario ELSE actionsScenario ENDIF PTVIRGULE actionsScenario 
+		| IF PAROUVRE IDENT POINT ETAT DOUBLEGAL CHECKETAT PARFERME THEN actionsScenario ELSE actionsScenario ENDIF PTVIRGULE actionsScenario 
 										
 		| COMMENT actionsScenario
 		
@@ -232,7 +233,7 @@ listeIdent 		::=	IDENT VIRG listeIdent
 
 parametresCOMPROG::= PAROUVRE param param param param lastparam PARFERME VIRG parametresCOMPROG
 																							
-		|	PAROUVRE param:a param:m param:j param:h lastparam:v PARFERME
+		|	PAROUVRE param param param param lastparam PARFERME
 
 		| 	COMMENT parametresCOMPROG ;
 
