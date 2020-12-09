@@ -152,8 +152,10 @@ content3		::= BALISEOUVRANTE BALISESCENARII FINBALISE zoneScenarii BALISEFERMANT
 content4		::= BALISEOUVRANTE BALISECOMMANDE FINBALISE zoneCommande BALISEFERMANTE BALISECOMMANDE FINBALISE 
 				|	COMMENT content4;
  
-zoneAppareils	::=	APDECLA listeVariables POINT zoneAppareils														                                                                                                   
-        		|	APDECLAENSEMBLE IDENT EGAL ACCOUVRE listeEns ACCFERME POINT zoneAppareils 																												  
+zoneAppareils	::=	APDECLA listeVariables POINT zoneAppareils	
+
+        		|	APDECLAENSEMBLE IDENT EGAL ACCOUVRE listeEns ACCFERME POINT zoneAppareils 
+			
         		|	COMMENT zoneAppareils 	
 			|	;
 
@@ -179,7 +181,7 @@ zoneScenarii 	::= BALISEOUVRANTE BALISESCENARIO IDENT FINBALISE actionsScenario 
 				| ;
 
 
-actionsScenario ::= IDENT:id POINT ACTIONS:act PTVIRGULE actionsScenario
+actionsScenario ::= IDENT POINT ACTIONS PTVIRGULE actionsScenario
       
 																   
 		| FORALL IDENT DEUXPOINTS APDECLA DO actionsScenario  DONE PTVIRGULE actionsScenario
